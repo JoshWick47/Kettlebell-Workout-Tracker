@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10x10 Density Tracker</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --border-color: #30363d;
+            --text-color: #c9d1d9;
+            --text-dim: #8b949e;
+            --accent-color: #58a6ff;
+            --success-color: #2ea44f;
+            --timer-color: #ff7b72;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .controls-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        select {
+            width: 100%;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: #ffffff;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            outline: none;
+        }
+        .timer-banner {
+            background-color: #21262d;
+            border: 1px solid var(--timer-color);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            position: sticky;
+            top: 10px;
+            z-index: 10;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .timer-display {
+            font-size: 2.2rem;
+            font-family: monospace;
+            font-weight: bold;
+            color: var(--timer-color);
+        }
+        .progress-bar-container {
+            background: var(--bg-color);
+            border-radius: 4px;
+            height: 6px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: var(--timer-color);
+            height: 100%;
+            width: 0%;
+            transition: width 1s linear;
+        }
+        .rounds-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+        .round-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .round-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #ffffff;
+            border-bottom: 1px solid #21262d;
+            padding-bottom: 5px;
+        }
+        .exercise-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .exercise-row:active {
+            transform: scale(0.98);
+        }
+        .exercise-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .ex-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .ex-reps {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+        .checkbox-ui {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .exercise-row.completed {
+            border-color: var(--success-color);
+            background-color: rgba(46, 164, 79, 0.05);
+            opacity: 0.6;
+        }
+        .exercise-row.completed .checkbox-ui {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        .exercise-row.completed .checkbox-ui::after {
+            content: "✓";
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        .exercise-row.completed .ex-name {
+            text-decoration: line-through;
+            color: var(--text-dim);
+        }
+        .reset-btn {
+            width: 100%;
+            background-color: transparent;
+            border: 1px solid #f85149;
+            color: #f85149;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>10x10 Density Log</h1>
+        <div class="subtitle">Andrade Progression Protocol</div>
+    </header>
+    <div class="controls-card">
+        <label for="weekSelect">Select Current Progression Block</label>
+        <select id="weekSelect" onchange="updateWeekConfig()">
+            <option value="90">Week 1: 10x10 Layout (1:30 Rest)</option>
+            <option value="75">Week 2: Compression Phase (1:15 Rest)</option>
+            <option value="60">Week 3: Deep Density (1:00 Rest)</option>
+            <option value="45" selected>Week 4: Peak Output (0:45 Rest)</option>
+        </select>
+    </div>
+    <div class="timer-banner" id="timerBanner">
+        <div class="subtitle" id="timerLabel">Rest Clock Idle</div>
+        <div class="timer-display" id="timerClock">00:00</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+    </div>
+    <div class="rounds-container" id="roundsGrid"></div>
+    <button class="reset-btn" onclick="resetTracker()">Reset Session Log</button>
+    <script>
+        let currentRestDuration = 45; 
+        let countdownInterval = null;
+        function buildGrid() {
+            const grid = document.getElementById('roundsGrid');
+            grid.innerHTML = '';
+            for (let r = 1; r <= 10; r++) {
+                const roundCard = document.createElement('div');
+                roundCard.className = 'round-card';
+                roundCard.innerHTML = `
+                    <div class="round-title">ROUND ${r} / 10</div>
+                    <div class="exercise-row" id="r${r}a" onclick="toggleSet('r${r}a')">
+                        <div class="exercise-info">
+                            <span class="ex-name">Kettlebell Swings</span>
+                            <span class="ex-reps">Block A • 10 Reps</span>
+                        </div>
+                        <div class="checkbox-ui"></div>
+                    </div>
+                    <div class="exercise-row" id="r${r}b" onclick="toggleSet('r${r}b')">
+                        <div class="exercise-info">
+                            <span class="ex-name">Push-ups</span>
+                            <span class="ex-reps">Block B • 10 Reps</span>
+                        </div>
+                        <div class="checkbox-ui"></div>
+                    </div>
+                `;
+                grid.appendChild(roundCard);
+            }
+            loadState();
+        }
+        function toggleSet(setId) {
+            const row = document.getElementById(setId);
+            const isCompleting = !row.classList.contains('completed');
+            row.classList.toggle('completed');
+            saveState();
+            if (isCompleting) { startRestTimer(); }
+        }
+        function startRestTimer() {
+            clearInterval(countdownInterval);
+            let timeLeft = currentRestDuration;
+            const clockDisplay = document.getElementById('timerClock');
+            const label = document.getElementById('timerLabel');
+            const bar = document.getElementById('progressBar');
+            label.innerText = "RECOVER";
+            label.style.color = "var(--timer-color)";
+            updateTimerUI(timeLeft, clockDisplay, bar);
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerUI(timeLeft, clockDisplay, bar);
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    label.innerText = "NEXT SET UP";
+                    label.style.color = "var(--success-color)";
+                    clockDisplay.innerText = "00:00";
+                    bar.style.width = "0%";
+                }
+            }, 1000);
+        }
+        function updateTimerUI(e, t, n) {
+            const r = Math.floor(e / 60).toString().padStart(2, "0");
+            const o = (e % 60).toString().padStart(2, "0");
+            t.innerText = `${r}:${o}`;
+            n.style.width = `${e / currentRestDuration * 100}%`;
+        }
+        function updateWeekConfig() {
+            const select = document.getElementById('weekSelect');
+            currentRestDuration = parseInt(select.value);
+            localStorage.setItem('andrade_rest_duration', currentRestDuration);
+            clearInterval(countdownInterval);
+            document.getElementById('timerLabel').innerText = "Target Rest Configured";
+            const mins = Math.floor(currentRestDuration / 60).toString().padStart(2, "0");
+            const secs = (currentRestDuration % 60).toString().padStart(2, "0");
+            document.getElementById('timerClock').innerText = `${mins}:${secs}`;
+            document.getElementById('progressBar').style.width = "0%";
+        }
+        function saveState() {
+            const completedSets = [];
+            document.querySelectorAll('.exercise-row.completed').forEach(row => { completedSets.push(row.id); });
+            localStorage.setItem('andrade_completed_sets', JSON.stringify(completedSets));
+        }
+        function loadState() {
+            const savedSets = localStorage.getItem('andrade_completed_sets');
+            if (savedSets) {
+                JSON.parse(savedSets).forEach(id => {
+                    const row = document.getElementById(id);
+                    if (row) row.classList.add('completed');
+                });
+            }
+            const savedRest = localStorage.getItem('andrade_rest_duration');
+            if (savedRest) {
+                currentRestDuration = parseInt(savedRest);
+                document.getElementById('weekSelect').value = currentRestDuration;
+            }
+        }
+        function resetTracker() {
+            if (confirm("Clear session data to start fresh?")) {
+                clearInterval(countdownInterval);
+                localStorage.removeItem('andrade_completed_sets');
+                document.querySelectorAll('.exercise-row').forEach(row => { row.classList.remove('completed'); });
+                document.getElementById('timerLabel').innerText = "Rest Clock Idle";
+                document.getElementById('timerClock').innerText = "00:00";
+                document.getElementById('progressBar').style.width = "0%";
+            }
+        }
+        buildGrid();
+        updateWeekConfig();
+    </script>
+</body>
+</html>
